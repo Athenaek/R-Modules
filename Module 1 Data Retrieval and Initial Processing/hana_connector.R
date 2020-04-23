@@ -25,16 +25,16 @@ sell_thru = sqlQuery(con, "SELECT sales_org, postal_cd, sold_to_desc, fiscal_wee
 head(sell_thru)
 
 # EX 1. Some postal codes have more than 5 characters. Show the different number of characters that the postal_cd field is made out of.     
-
+str_length(sell_thru$POSTAL_CD)
 
 
 # EX 2. Clean up the POSTAL_CD field to always consist of the first 5 characters. Hint: Use substr().
 
-
+POSTAL_CD2 = substr(sell_thru$POSTAL_CD, 1,5)
 
 # EX 3. Now exclude the zips with length 0.
 
-
+POSTAL_CD3 = POSTAL_CD2 != 0
 
 # We want all zips to be of length 5. Here we use padding to add trailing 0's to zip codes of length < 5.
 sell_thru$POSTAL_CD = str_pad(sell_thru$POSTAL_CD, 5, pad="0")
@@ -42,42 +42,53 @@ sell_thru$POSTAL_CD = str_pad(sell_thru$POSTAL_CD, 5, pad="0")
 # EX 4. SOLD_TO_DESC includes all resellers. Transform the field to split out "BB", transform any other values to "RSL". 
 # (Hint: use ifelse() or case_when() on the SOLD_TO_DESC field).
 
-
+ifelse(sell_thru$SOLD_TO_DESC == 'Best Buy Stores', 'BB', 'RSL')
 
 # ===== Retrieve sell-in data ===== #
 sell_in = sqlQuery(con, "SELECT net_mangement_sales_usd, postal_cd, sales_org, sales_off, fiscal_week_begin FROM _SYS_BIC.\"BOSE.MPE_SALES/MPE_CAV_SALES_DIRECT_SELLIN\" where SALES_ORG ='US10' AND sales_off IN ('4003','4010')")
 
 # EX 5. check out sell_in .
-
+head(sell_in)
 
 
 # EX 6. Use same procedure as above for sell-thru to clean up zip codes.
-
-
+postal_cd2 = substr(sell_in$postal_cd, 1, 5)
+postal_cd3 = postal_cd2 != 0
+sell_in$postal_cd = str_pad(sell_in$postal_cd3, 5, pad="0")
 
 # ===== Now we want to join the two data sets ===== # 
 # EX 7. Make sure the sell-in data frame has a column "channel" that indicates which channel the results apply to.
 
-
+sell_in$CHANNEL = ifelse(sell_in$SALES_OFF == "4003","Retail","EComm")
 
 
 # EX 8. Strip column SALES_OFF as we do not need it anymore now we have channel .
-
+subset(sell_in, select = -c(SALES_OFF))
 
 
 
 # EX 9. Make sure both data frames have the same column names. Hint: use colnames().
+sell_thru$SOLD_TO_DESC = NULL
+sell_thru$PC2 = NULL
+sell_thru$POSTAL_CD2 = NULL
+sell_thru$CHANNEL <- c("channel")
 
+
+sell_in$SALES_OFF = NULL
+
+
+colnames(sell_thru)
+colnames(sell_in)
 
 
 
 # EX 10. Join the two dataframes by using rbind() ("rowbind").
-
+Together <- rbind(sell_thru, sell_in)
 
 
 
 # EX 11. Write the results to a local csv file. Hint: use write.csv().
-
+write.csv(Together, file = 'sell_data.csv')
 
 
 
